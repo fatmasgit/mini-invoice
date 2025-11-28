@@ -8,13 +8,9 @@ const { html } = await req.json();
     const browser = await chromium.launch();
     const page = await browser.newPage();
 
-    // Load HTML into a virtual browser
     await page.setContent(html, { waitUntil: "load" });
-
-    // Render as print so Tailwind print:hidden works
     await page.emulateMedia({ media: "print" });
 
-    // Generate high-quality PDF
     const pdfBuffer = await page.pdf({
         format: "A4",
         printBackground: true,
@@ -23,10 +19,10 @@ const { html } = await req.json();
 
     await browser.close();
 
-    // Convert Node Buffer -> Blob
-    const pdfBlob = new Blob([pdfBuffer], { type: "application/pdf" });
+    // Convert Node Buffer -> Uint8Array for Edge/Serverless environments
+    const pdfUint8 = new Uint8Array(pdfBuffer);
 
-    return new Response(pdfBlob, {
+    return new Response(pdfUint8, {
         headers: {
             "Content-Type": "application/pdf",
             "Content-Disposition": "attachment; filename=invoice.pdf",
