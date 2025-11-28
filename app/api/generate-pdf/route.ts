@@ -1,43 +1,45 @@
 import { chromium } from "playwright-core";
 
-// Force Node.js runtime (Edge won't work with Playwright)
-export const runtime = "nodejs";
+export const runtime = "nodejs"; // ensures Node runtime on Vercel
 
 export async function POST(req: Request) {
-try {
-const { html } = await req.json();
+  try {
+    const { html } = await req.json();
 
+    // Launch headless Chromium with sandbox args for Vercel
+    const browser = await chromium.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
 
-const browser = await chromium.launch({
-  headless: true,
-  args: ["--no-sandbox", "--disable-setuid-sandbox"],
-});
+    const page = await browser.newPage();
 
-const page = await browser.newPage();
-await page.setContent(html, { waitUntil: "load" });
-await page.emulateMedia({ media: "print" });
+    // Load HTML content
+    await page.setContent(html, { waitUntil: "load" });
 
-const pdfBuffer = await page.pdf({
-  format: "A4",
-  printBackground: true,
-  preferCSSPageSize: true,
-});
+    // Render as print so Tailwind print:hidden works
+    await page.emulateMedia({ media: "print" });
 
-await browser.close();
+    // Generate high-quality PDF
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
 
-// Convert Buffer to Uint8Array (safe for Response)
-const pdfUint8 = new Uint8Array(pdfBuffer);
+    await browser.close();
 
-return new Response(pdfUint8, {
-  headers: {
-    "Content-Type": "application/pdf",
-    "Content-Disposition": "attachment; filename=invoice.pdf",
-  },
-});
+    // Convert Node Buffer -> Uint8Array (safe for Response)
+    const pdfUint8 = new Uint8Array(pdfBuffer);
 
-
-} catch (error) {
-console.error("PDF ERROR:", error);
-return new Response("Failed to generate PDF", { status: 500 });
-}
+    return new Response(pdfUint8, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=invoice.pdf",
+      },
+    });
+  } catch (error) {
+    console.error("PDF ERROR:", error);
+    return new Response("Failed to generate PDF", { status: 500 });
+  }
 }
