@@ -1,43 +1,42 @@
 import { chromium } from "playwright-core";
 
-// Ensure Node.js runtime
-export const runtime = "nodejs";
+export const runtime = "nodejs"; // critical!
 
 export async function POST(req: Request) {
-try {
-const { html } = await req.json();
+  try {
+    const { html } = await req.json();
 
+    const browser = await chromium.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
 
-const browser = await chromium.launch({
-  headless: true,
-  args: ["--no-sandbox", "--disable-setuid-sandbox"],
-});
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "load" });
+    await page.emulateMedia({ media: "print" });
 
-const page = await browser.newPage();
-await page.setContent(html, { waitUntil: "load" });
-await page.emulateMedia({ media: "print" });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
 
-const pdfBuffer = await page.pdf({
-  format: "A4",
-  printBackground: true,
-  preferCSSPageSize: true,
-});
+    await browser.close();
 
-await browser.close();
+    // Convert Buffer to ArrayBuffer for Response
+    const arrayBuffer = pdfBuffer.buffer.slice(
+      pdfBuffer.byteOffset,
+      pdfBuffer.byteOffset + pdfBuffer.byteLength
+    );
 
-// Convert Node.js Buffer to Uint8Array for Response
-const pdfArray = new Uint8Array(pdfBuffer);
-
-return new Response(pdfArray, {
-  headers: {
-    "Content-Type": "application/pdf",
-    "Content-Disposition": "attachment; filename=invoice.pdf",
-  },
-});
-
-
-} catch (error) {
-console.error("PDF ERROR:", error);
-return new Response("Failed to generate PDF", { status: 500 });
-}
+    return new Response(arrayBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=invoice.pdf",
+      },
+    });
+  } catch (err) {
+    console.error("PDF ERROR:", err);
+    return new Response("Failed to generate PDF", { status: 500 });
+  }
 }
