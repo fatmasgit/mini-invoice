@@ -154,7 +154,7 @@ export default function ItemRow({
                     e.stopPropagation();
                     onRemove();
                 }}
-                className="flex w-14 items-center justify-center p-1 text-[#dc2626] hover:text-[#991b1b]"
+                className="flex w-14 items-center justify-center p-1 text-[#dc2626] hover:text-[#991b1b] print:opacity-0"
             >
                 <Trash size={20} />
             </button>

@@ -1,8 +1,6 @@
 "use client";
 
 import { RefObject } from "react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 export default function GeneratePDFButton({
     containerRef,
@@ -12,42 +10,42 @@ export default function GeneratePDFButton({
     const onDownload = async () => {
         if (!containerRef.current) return;
 
-        const element = containerRef.current;
+        // Extract ONLY your invoice DOM area
+        const htmlContent = `
+        <html>
+        <head>
+            <!-- Tailwind v3 supports arbitrary colors -->
+            <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="p-6">
+            ${containerRef.current.innerHTML}
+        </body>
+        </html>
+        `;
 
-        // HIGH RESOLUTION
-        const scale = 3;
-        // capture DOM → canvas
-        const canvas = await html2canvas(element, {
-            scale,
-            useCORS: true,
-            backgroundColor: null, // keeps original background
-            logging: false,
+        const response = await fetch("/api/generate-pdf", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ html: htmlContent }),
         });
 
-        const imgData = canvas.toDataURL("image/png");
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
 
-        const pdfWidth = canvas.width;
-        const pdfHeight = canvas.height;
-
-        const pdf = new jsPDF({
-            orientation: pdfWidth > pdfHeight ? "landscape" : "portrait",
-            unit: "px",
-            format: [pdfWidth, pdfHeight],
-        });
-
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-        pdf.save("invoice.pdf");
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "invoice.pdf";
+        a.click();
     };
 
     return (
         <div className="w-full flex justify-end mt-4">
             <button
                 onClick={onDownload}
-                className="px-5 py-2 bg-[#2563eb] text-base font-medium text-white rounded-md shadow-md hover:bg-[#1e4db7] transition"
+                className="px-5 py-2 bg-[#2563eb] text-white  text-base font-medium rounded-md shadow-md hover:bg-[#1e4db7] transition"
             >
                 Generate PDF
             </button>
         </div>
-
     );
 }

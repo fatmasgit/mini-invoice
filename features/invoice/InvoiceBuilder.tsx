@@ -80,7 +80,7 @@ export default function InvoiceBuilder() {
                             <span className="text-start w-10 block">Quantity</span>
                             <span className="text-start w-24 block">Price</span>
                             <span className="text-start w-12 block">Total</span>
-                            <span className="text-start w-14 block">Actions</span>
+                            <span className="text-start w-14 block print:opacity-0 ">Actions</span>
                         </div>
 
                         {/* Item Rows */}
