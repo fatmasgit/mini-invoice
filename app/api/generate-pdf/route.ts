@@ -23,10 +23,10 @@ const { html } = await req.json();
 
     await browser.close();
 
-    // Convert Buffer -> Uint8Array to satisfy Next.js Response
-    const pdfUint8 = new Uint8Array(pdfBuffer);
+    // Convert Node Buffer -> Blob
+    const pdfBlob = new Blob([pdfBuffer], { type: "application/pdf" });
 
-    return new Response(pdfUint8, {
+    return new Response(pdfBlob, {
         headers: {
             "Content-Type": "application/pdf",
             "Content-Disposition": "attachment; filename=invoice.pdf",
