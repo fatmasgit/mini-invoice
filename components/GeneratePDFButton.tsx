@@ -11,17 +11,18 @@ export default function GeneratePDFButton({
         if (!containerRef.current) return;
 
 
-        // Wrap invoice content in a proper HTML document
-        const htmlContent = `
-            < html >
-    <head>
-      <script src="https://cdn.tailwindcss.com"></script>
-    </head>
-    <body class="p-6 bg-white">
-      ${containerRef.current.innerHTML}
-    </body>
-  </html >
-        `;
+        // Wrap invoice content in proper HTML
+        const htmlContent = `<html>
+            
+
+  <head>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="p-6 bg-white">
+    ${containerRef.current.innerHTML}
+  </body>
+</html>`;
+
 
         try {
             const response = await fetch("/api/generate-pdf", {

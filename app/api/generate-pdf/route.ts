@@ -1,45 +1,48 @@
-import { chromium } from "playwright-core";
+import { chromium } from "playwright"; // full playwright, includes Chromium
 
 export const runtime = "nodejs"; // ensures Node runtime on Vercel
 
 export async function POST(req: Request) {
-  try {
-    const { html } = await req.json();
+try {
+const { html } = await req.json();
 
-    // Launch headless Chromium with sandbox args for Vercel
-    const browser = await chromium.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
 
-    const page = await browser.newPage();
+// Launch headless Chromium with sandbox flags for Vercel
+const browser = await chromium.launch({
+  headless: true,
+  args: ["--no-sandbox", "--disable-setuid-sandbox"],
+});
 
-    // Load HTML content
-    await page.setContent(html, { waitUntil: "load" });
+const page = await browser.newPage();
 
-    // Render as print so Tailwind print:hidden works
-    await page.emulateMedia({ media: "print" });
+// Load HTML content
+await page.setContent(html, { waitUntil: "load" });
 
-    // Generate high-quality PDF
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      preferCSSPageSize: true,
-    });
+// Render as print so Tailwind print:hidden works
+await page.emulateMedia({ media: "print" });
 
-    await browser.close();
+// Generate PDF
+const pdfBuffer = await page.pdf({
+  format: "A4",
+  printBackground: true,
+  preferCSSPageSize: true,
+});
 
-    // Convert Node Buffer -> Uint8Array (safe for Response)
-    const pdfUint8 = new Uint8Array(pdfBuffer);
+await browser.close();
 
-    return new Response(pdfUint8, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=invoice.pdf",
-      },
-    });
-  } catch (error) {
-    console.error("PDF ERROR:", error);
-    return new Response("Failed to generate PDF", { status: 500 });
-  }
+// Convert Node Buffer -> Uint8Array for Response
+const pdfUint8 = new Uint8Array(pdfBuffer);
+
+return new Response(pdfUint8, {
+  headers: {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": "attachment; filename=invoice.pdf",
+  },
+});
+
+
+} catch (error) {
+console.error("PDF ERROR:", error);
+return new Response("Failed to generate PDF", { status: 500 });
+}
 }
